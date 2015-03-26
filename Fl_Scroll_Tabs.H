@@ -1,8 +1,32 @@
-#pragma once
+//
+// "$Id: Fl_Scroll_Tabs.H $"
+//
+// Scrolling tabs for dynamic content header file for the Fast Light Tool Kit (FLTK).
+//
+// Copyright 1998-2010 by Bill Spitzak and others.
+//
+// This library is free software. Distribution and use rights are outlined in
+// the file "COPYING" which should have been included with this file.  If this
+// file is missing or damaged, see the license at:
+//
+//     http://www.fltk.org/COPYING.php
+//
+// Please report all bugs and problems on the following page:
+//
+//     http://www.fltk.org/str.php
+//
+
+
+
+/* \file
+   Fl_Tabs widget . */
+
+#ifndef Fl_Scroll_Tabs_H
+#define Fl_Scroll_Tabs_H
+
 #include <FL/Fl_Tabs.H>
 
-class Fl_Scroll_Tabs : public Fl_Tabs {
-protected:
+class FL_EXPORT Fl_Scroll_Tabs : public Fl_Tabs {
 
   unsigned long offset;   
   Fl_Widget *value_;
@@ -15,6 +39,8 @@ protected:
   int pressed_; // 0 for tab bar, 1 for left button, 2 for right button
   int ensure_value();
   int calculate_tab_sizes();
+
+protected:
     
     // Callbacks for scrolling the list of tabs
   virtual int can_scroll_left() const;
@@ -31,15 +57,28 @@ protected:
 public:
     
   Fl_Scroll_Tabs(int,int,int,int,const char *l=0);
-    
+  ~Fl_Scroll_Tabs();
+  
   virtual int handle(int);
 
   Fl_Widget *push() const;
   int push(Fl_Widget *);
   int push(int i) {return push(child(i));}
+  /**
+    Returns the currently selected tab group, or NULL if no tabs exist.
+    \see value(Fl_Widget*).
+  */
   Fl_Widget *value() {ensure_value(); return value_;}
+  
+  /**
+    Sets the currently selected tab to \p w if it is a child. Returns the child's index in array()
+    if it is a child, children() otherwise.
+    \see array()
+  */
   int value(Fl_Widget *w){int f = find(w); if (f!=children()) value_ = w; return f;}
-    
+  
+  Fl_Widget *which(int event_x, int event_y);
+  
   int closebutton() const {return closebutton_!=0;}
   void closebutton(int i) {closebutton_=(i!=0);}
     
@@ -49,3 +88,5 @@ public:
   void close_callback(Fl_Callback_p cb_, void *arg_) {close_callback_ = cb_; close_callback_arg_ = arg_;}
 
 };
+
+#endif

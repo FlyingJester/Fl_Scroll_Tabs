@@ -21,8 +21,13 @@ Fl_Scroll_Tabs::Fl_Scroll_Tabs(int ax, int ay, int aw, int ah, const char *l)
   box(FL_FLAT_BOX);
 }
 
+Fl_Scroll_Tabs::~Fl_Scroll_Tabs() {
+  if(pressed_)
+    Fl::remove_timeout(timeout_cb, this);
+}
+
 Fl_Widget *Fl_Scroll_Tabs::push() const {
-  return value_;
+  return (pressed_==0)?value_:NULL;
 }
 
 int Fl_Scroll_Tabs::push(Fl_Widget *w){
@@ -57,57 +62,67 @@ int Fl_Scroll_Tabs::handle(int e) {
     case FL_MOVE:
     /* FALLTHROUGH */
     case FL_MOUSEWHEEL:
-    if (Fl::event_y()<y()+tab_height_) {
+    if (Fl::event_y()<y()+tab_height_) { // Is withing tab bar
       const int inside_left_button = Fl::event_x()<=x()+button_width_,
         inside_right_button = Fl::event_x()>=x()+w()-button_width_;
-        if (e==FL_PUSH) {
-          if (inside_left_button) {
-            increment_cb();
-            pressed_ = 1;
-          }
-          else if (inside_right_button) {
-            decrement_cb();
-            pressed_ = 2;
-          }
-          if (inside_left_button || inside_right_button) {
-            Fl::add_timeout(INITIALREPEAT, timeout_cb, this);
-             return 1;
-          }
+      if (e==FL_PUSH) {
+        if (inside_left_button) {
+          increment_cb();
+          pressed_ = 1;
         }
-        if (e==FL_RELEASE) {
-        
-          // We need to redraw the scroll button
-          if (pressed_!=-1)
-            redraw();
+        else if (inside_right_button) {
+          decrement_cb();
+          pressed_ = 2;
+        }
+        else{
+          pressed_ = 0;
+        }
 
-          pressed_ = -1;
-
-          if (inside_left_button || inside_right_button)
-            Fl::remove_timeout(timeout_cb, this);
-          else { // Mouse is inside the tab bar itself
-            const int effective_x = Fl::event_x()+offset-button_width_,
-              x_inside_tab = effective_x%LABEL_WIDTH,
-              selected_tab = effective_x/LABEL_WIDTH;
-                        
-            if (children()<=selected_tab)
-              return 1;
-            if (selected_tab<0)
-              return 1;
-            else if (closebutton_ && (LABEL_WIDTH-x_inside_tab<16)) {
-              if (close_callback_)
-                close_callback_(child(selected_tab), close_callback_arg_);
-              remove(child(selected_tab));                        
-              ensure_value();
-              redraw();
-            }
-            else
-              push(selected_tab);
-                    
+        if (inside_left_button || inside_right_button) {
+          Fl::add_timeout(INITIALREPEAT, timeout_cb, this);
             return 1;
-          }
         }
       }
+      if (e==FL_RELEASE) {
+        
+        if (pressed_!=-1)
+          // We need to redraw the scroll button
+          redraw();
+
+        if(pressed_>0)
+          Fl::remove_timeout(timeout_cb, this);
+
+        pressed_ = -1;
+
+        if(!(inside_left_button || inside_right_button)) { // Mouse is inside the tab bar itself
+          const int effective_x = Fl::event_x()+offset-button_width_,
+            x_inside_tab = effective_x%LABEL_WIDTH,
+            selected_tab = effective_x/LABEL_WIDTH;
+                        
+          if (children()<=selected_tab)
+            return 1;
+          if (selected_tab<0)
+            return 1;
+          else if (closebutton_ && (LABEL_WIDTH-x_inside_tab<16)) {
+            if (close_callback_)
+              close_callback_(child(selected_tab), close_callback_arg_);
+            remove(child(selected_tab));
+            ensure_value();
+            redraw();
+          }
+          else
+            push(selected_tab);
+                      
+          return 1;
+        }
+      }
+    } // Is withing tab bar
+    else if((e==FL_PUSH) || (e==FL_RELEASE)){
+      if(pressed_)
+        redraw();
+      pressed_=-1;
     }
+  }
 
   return Fl_Group::handle(e);
 }
@@ -128,17 +143,17 @@ void Fl_Scroll_Tabs::draw() {
     
   {
     // Draw the arrows
-    const unsigned arrow_offsets = 4;
+    const unsigned arrow_offsets_x = button_width_/3, arrow_offsets_y = tab_height_/3;
         
-    fl_color(can_scroll_left()?labelcolor():FL_INACTIVE_COLOR);
-    fl_polygon(x()+button_width_-arrow_offsets, y()+arrow_offsets, 
-      x()+arrow_offsets, y()+(tab_height_>>1),
-      x()+button_width_-arrow_offsets, y()+tab_height_-arrow_offsets);
+    fl_color(can_scroll_left()?labelcolor():fl_inactive(labelcolor()));
+    fl_polygon(x()+button_width_-arrow_offsets_x, y()+arrow_offsets_y, 
+      x()+arrow_offsets_x, y()+(tab_height_>>1),
+      x()+button_width_-arrow_offsets_x, y()+tab_height_-arrow_offsets_y);
 
-    fl_color(can_scroll_right()?labelcolor():FL_INACTIVE_COLOR);
-    fl_polygon(x()+w()-button_width_+arrow_offsets, y()+arrow_offsets, 
-      x()+w()-arrow_offsets, y()+(tab_height_>>1),
-      x()+w()-button_width_+arrow_offsets, y()+tab_height_-arrow_offsets);
+    fl_color(can_scroll_right()?labelcolor():fl_inactive(labelcolor()));
+    fl_polygon(x()+w()-button_width_+arrow_offsets_x, y()+arrow_offsets_y, 
+      x()+w()-arrow_offsets_x, y()+(tab_height_>>1),
+      x()+w()-button_width_+arrow_offsets_x, y()+tab_height_-arrow_offsets_y);
   }
 
   {
@@ -189,6 +204,25 @@ void Fl_Scroll_Tabs::draw() {
     
     fl_pop_clip();
 
+}
+
+/**
+  Return the widget of the tab the user clicked on at \p event_x / \p event_y.
+  This is used for event handling (clicks) and by fluid to pick tabs.
+
+  \returns The child widget of the tab the user clicked on, or<br>
+           0 if there are no children or if the event is outside of the tabs area.
+*/
+Fl_Widget *Fl_Scroll_Tabs::which(int event_x, int event_y) {
+  if ((event_y>y()+tab_height_) || (event_y<y()) || 
+    (event_x<x()+button_width_) || (event_x>x()+w()-button_width_))
+    return NULL;
+  
+  const int selected_tab = (event_x+offset-button_width_)/LABEL_WIDTH;
+
+  if ((selected_tab>=children()) || (selected_tab<0)) return NULL;
+    
+  return child(selected_tab);
 }
 
 int Fl_Scroll_Tabs::calculate_tab_sizes() {
