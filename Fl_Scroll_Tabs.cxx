@@ -208,7 +208,7 @@ int Fl_Scroll_Tabs::can_scroll_left() const{
 
 int Fl_Scroll_Tabs::can_scroll_right() const{
     const long max_offset = (LABEL_WIDTH*children())-w()+(button_width_<<1);
-    return (max_offset<0) && (offset<max_offset);
+    return (max_offset>0) && (offset<max_offset);
 }
 
 void Fl_Scroll_Tabs::increment_cb(){
