@@ -160,6 +160,8 @@ public:
     maxw = maximum_tab_width_;
   }
   
+  void make_tab_visible(int);
+  
 };
 
 #endif

@@ -145,6 +145,8 @@ int Fl_Scroll_Tabs::push(Fl_Widget *w){
     value_->set_visible_focus();
   }
   
+  make_tab_visible(c);
+  
   return c;
 }
 
@@ -472,4 +474,17 @@ int Fl_Scroll_Tabs::ensure_value() {
       value_->show(); 
   }
   return w;
+}
+
+void Fl_Scroll_Tabs::make_tab_visible(int i){
+  tab_positions();
+  
+  
+  const int view_width = w()-Fl::box_dw(box())-(button_width_<<1),
+    end_visible_x = offset+view_width;
+    
+  if(tab_pos[i]<offset) offset = tab_pos[i];
+  if(tab_pos[i]+tab_width[i]>end_visible_x) offset = tab_pos[i]-view_width+tab_width[i];
+  
+  redraw();
 }
