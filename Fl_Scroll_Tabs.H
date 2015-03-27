@@ -54,10 +54,6 @@ class FL_EXPORT Fl_Scroll_Tabs : public Fl_Tabs {
   char **tab_labels; 
   int tab_count;  // size for tab_pos and tab_width
 
-  unsigned ellipse_size_;
-  
-  void ellipse_size();
-
   int tab_positions();  // allocate and calculate tab positions
   int tab_label_length(int);  // calculate the label to print for the tab `i'. Returns the width of the new label (total) in pixels.
   void clear_tab_positions();

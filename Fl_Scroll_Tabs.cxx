@@ -21,15 +21,13 @@ Fl_Scroll_Tabs::Fl_Scroll_Tabs(int ax, int ay, int aw, int ah, const char *l)
   , tab_height_(MINIMUM_TAB_HEIGHT)
   , button_width_(MAXIMUM_BUTTON_WIDTH)
   , minimum_tab_width_(8) 
-  , maximum_tab_width_(64)
+  , maximum_tab_width_(128)
   , pressed_(-1) 
   , tab_pos(NULL)
   , tab_width(NULL)
   , tab_labels(NULL)
-  , tab_count(0) 
-  , ellipse_size_(0) {
+  , tab_count(0) {
   box(FL_FLAT_BOX);
-  ellipse_size();
 }
 
 Fl_Scroll_Tabs::~Fl_Scroll_Tabs() {
@@ -37,13 +35,6 @@ Fl_Scroll_Tabs::~Fl_Scroll_Tabs() {
     Fl::remove_timeout(timeout_cb, this);
     
   clear_tab_positions();
-}
-
-void Fl_Scroll_Tabs::ellipse_size() {
-  int s_w = 0, s_h;
-  fl_font(labelfont(), labelsize());
-  fl_measure("...", s_w, s_h, 0);
-  ellipse_size_ = s_w;
 }
 
 int Fl_Scroll_Tabs::tab_positions() {
@@ -84,9 +75,10 @@ int Fl_Scroll_Tabs::tab_positions() {
 
 int Fl_Scroll_Tabs::tab_label_length(int i) {
 
+  fl_font(labelfont(), labelsize());
+
   const char * const label_a = child(i)->label();
   int label_len = strlen(label_a);
-  const int initial_len = label_len;
   // Three extra to hold an ellipse if necessary. 
   // Not 4 for a null+ellipse, since ellipse is only appended if the string is truncated.
   char *label_ = (char *)realloc(tab_labels[i], label_len+3);
@@ -94,20 +86,23 @@ int Fl_Scroll_Tabs::tab_label_length(int i) {
 
   int s_w = 0, s_h;
   
-  fl_measure(label_, s_w, s_h);
+  fl_measure(label_, s_w, s_h, 0);
   
   if (maximum_tab_width_!=-1) {
-    do {
+    char *end = label_+label_len;
+    while ((end!=label_) && (s_w>=maximum_tab_width_)) {
       
-      if (s_w<maximum_tab_width_-(closebutton_?button_width_:0)) break;
       
-      // Truncate one more letter off.
-      label_[--label_len] = 0;
-      strcat(label_, "...");
+      printf("Replaced %s at %c with ellipse. Width is %i\n", label_, *end, s_w);
       
-      fl_measure(label_, s_w, s_h);
+      strcpy(end, "...");
       
-    } while (label_len);
+      s_w = 0;
+      
+      fl_measure(label_, s_w, s_h, 0);
+      
+      end = (char *)fl_utf8back(end-1, label_, end);
+    }
   }
   
   if (closebutton_) {
