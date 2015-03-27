@@ -16,17 +16,82 @@ Fl_Scroll_Tabs::Fl_Scroll_Tabs(int ax, int ay, int aw, int ah, const char *l)
   : Fl_Tabs(ax, ay, aw, ah, l)
   , offset(0)
   , value_(NULL)
-  , closebutton_(1)
+  , closebutton_(0)
   , close_callback_(NULL)
   , tab_height_(MINIMUM_TAB_HEIGHT)
   , button_width_(MINIMUM_TAB_HEIGHT)
-  , pressed_(-1) {
+  , pressed_(-1) 
+  , tab_pos(NULL)
+  , tab_width(NULL)
+  , tab_str_len(NULL)
+  , tab_capacity(0)
+  , tab_count(0) 
+  , ellipse_size(0) {
   box(FL_FLAT_BOX);
+  ellipse_size();
 }
 
 Fl_Scroll_Tabs::~Fl_Scroll_Tabs() {
   if(pressed_)
     Fl::remove_timeout(timeout_cb, this);
+    
+  clear_tab_positions();
+}
+
+void Fl_Scroll_Tabs::ellipse_size() {
+  int s_w = 0, s_h;
+  fl_font(labelfont(), labelsize());
+  fl_measure("...", s_w, s_h, 0);
+  ellipse_size = s_w;
+}
+
+int Fl_Scroll_Tabs::tab_positions() {
+
+  if (tab_count!=children()) {
+    tab_count = children();
+    tab_pos   = realloc(tab_pos, tab_count*sizeof(int));
+    tab_width = realloc(tab_width, tab_count*sizeof(int));
+    tab_str_len = realloc(tab_str_len, tab_count*sizeof(int));
+  }
+  
+  for (int i = 0; i<tab_count; i++) {
+    tab_width[i] = tab_label_length(i);
+    tab_pos[i] = tab_width[i] + (i?tab_pos[i-1]:0);
+  }
+  
+  return 0;
+}
+
+int Fl_Scroll_Tabs::tab_label_length(int i){
+
+  const char *label_a = child(i)->label();
+  int label_len = strlen(label_a);
+  char *label_ = malloc(label_len);
+  memcpy(label_, label_a, label_len+1);
+
+  while (label_len) {
+    int s_w = 0, s_h;
+    fl_measure(label_, s_w, s_h);
+    
+    if (s_w<maximum_tab_width_) break;
+    
+    // Truncate one more letter off.
+    label_[--label_len] = 0;
+  }
+  
+  if (s_w<minimum_tab_width_) s_w = minimum_tab_width_;
+  
+  tab_str_len[i] = label_len;
+    
+}
+
+void Fl_Scroll_Tabs::clear_tab_positions(){
+  if(tab_count==0)
+    return;
+
+  free(tab_pos);
+  free(tab_width);
+  tab_count = 0;
 }
 
 Fl_Widget *Fl_Scroll_Tabs::push() const {

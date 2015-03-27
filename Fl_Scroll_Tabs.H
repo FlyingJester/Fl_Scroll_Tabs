@@ -41,12 +41,26 @@ class FL_EXPORT Fl_Scroll_Tabs : public Fl_Tabs {
   int closebutton_;
   Fl_Callback_p close_callback_;
   void *close_callback_arg_;
-        
-  unsigned tab_height_, button_width_;
-    
+  
+  unsigned tab_height_, button_width_,;
+  int minimum_tab_width_, maximum_tab_width_;
+
   int pressed_; // 0 for tab bar, 1 for left button, 2 for right button
   int ensure_value();
   int calculate_tab_sizes();
+
+  int *tab_pos;  // array of x-offsets of tabs per child
+  int *tab_width;  // array of widths of tabs per child
+  const char **tab_labels; // array of byte-counts to print per tab to fit in the tab widths, negative indicates truncation
+  int tab_count;  // size for tab_pos and tab_width
+
+  unsigned ellipse_size;
+  
+  void ellipse_size();
+
+  int tab_positions();  // allocate and calculate tab positions
+  int tab_label_length(int);  // calculate the label to print for the tab `i'. Returns the width of the new label (total) in pixels.
+  void clear_tab_positions();
 
 protected:
     
@@ -57,7 +71,7 @@ protected:
   virtual void decrement_cb();
     
   void do_scroll_cb() {if (pressed_==1) increment_cb(); else if (pressed_==2) decrement_cb();}
-    
+
   static void timeout_cb(void *);
 
   virtual void draw();
@@ -129,7 +143,27 @@ public:
     \see closebutton()
   */
   void close_callback(Fl_Callback_p cb_, void *arg_) {close_callback_ = cb_; close_callback_arg_ = arg_;}
-
+  
+  /**
+    Sets the maximum and minimum tab label sizes. This limits the sizes, which are determined by the size of the label text.
+    Setting a maximum of -1 allows any size tab.
+    \see tab_size_range(int &, int &)
+  */
+  void tab_size_range(int maxw, int minw){
+    minimum_tab_width_ = minw;
+    maximum_tab_width_ = maxw;
+    tab_positions();
+  }
+  
+  /**
+    Gets the maximum and minimum tab label sizes. A maximum of -1 indicates no upper limit to tab size.
+    \see tab_size_range(int, int)
+  */
+  void tab_size_range(int &maxw, int &minw) const {
+    minw = minimum_tab_width_;
+    maxw = maximum_tab_width_;
+  }
+  
 };
 
 #endif
