@@ -6,6 +6,9 @@
 #define TAB_SCROLL 8
 #define MINIMUM_TAB_HEIGHT 16
 
+// The amount to pad tabs that are not selected
+#define TAB_SELECTION_BORDER 2
+
 #define INITIALREPEAT .5
 #define REPEAT .01
 
@@ -124,32 +127,58 @@ int Fl_Scroll_Tabs::handle(int e) {
 }
 
 void Fl_Scroll_Tabs::draw() {
-    
+  
   // Draw our box
   fl_draw_box(box(), x(), y(), w(), h(), color());
-    
+
   if(!children())
     return;
 
+  const int X = x()+Fl::box_dx(box()),
+    Y = y()+Fl::box_dy(box()),
+    W = w()-Fl::box_dw(box()),
+    H = h()-Fl::box_dh(box());
+
   calculate_tab_sizes();
-    
+  
+  Fl_Boxtype l_button_box = (pressed_==1)?FL_DOWN_FRAME:FL_UP_FRAME;
+  Fl_Boxtype r_button_box = (pressed_==2)?FL_DOWN_FRAME:FL_UP_FRAME;
+  
   // Draw the left and right buttons.
-  fl_draw_box((pressed_==1)?FL_DOWN_FRAME:FL_UP_FRAME, x(),        y(), button_width_, tab_height_, color());
-  fl_draw_box((pressed_==2)?FL_DOWN_FRAME:FL_UP_FRAME, x()+w()-button_width_, y(), button_width_, tab_height_, color());
+  fl_draw_box(l_button_box, X, Y, button_width_, tab_height_, color());
+  fl_draw_box(r_button_box, X+W-button_width_, Y, button_width_, tab_height_, color());
     
   {
-    // Draw the arrows
-    const unsigned arrow_offsets_x = button_width_/3, arrow_offsets_y = tab_height_/3;
-        
+    // Draw the arrows    
+    const int l_button_x = X+Fl::box_dx(l_button_box),
+      l_button_y = Y+Fl::box_dy(l_button_box),
+      l_button_w = button_width_-Fl::box_dw(l_button_box),
+      l_button_h = tab_height_-Fl::box_dh(l_button_box);
+            
+    const int r_button_x = X+W+Fl::box_dx(r_button_box)-button_width_,
+      r_button_y = Y+Fl::box_dy(r_button_box),
+      r_button_w = button_width_-Fl::box_dw(r_button_box),
+      r_button_h = tab_height_-Fl::box_dh(r_button_box);
+    
     fl_color(can_scroll_left()?labelcolor():fl_inactive(labelcolor()));
+    fl_polygon(l_button_x+((l_button_w<<1)/3), l_button_y+(r_button_h/4),
+      l_button_x+(l_button_w/3), l_button_y+(l_button_h>>1),
+      l_button_x+((l_button_w<<1)/3), l_button_y+((l_button_h*3)/4));
+/*    
     fl_polygon(x()+button_width_-arrow_offsets_x, y()+arrow_offsets_y, 
       x()+arrow_offsets_x, y()+(tab_height_>>1),
       x()+button_width_-arrow_offsets_x, y()+tab_height_-arrow_offsets_y);
-
+*/
+    
+    fl_color(can_scroll_right()?labelcolor():fl_inactive(labelcolor()));
+    fl_polygon(r_button_x+(r_button_w/3), r_button_y+(r_button_h/4),
+      r_button_x+((r_button_w<<1)/3), r_button_y+(r_button_h>>1),
+      r_button_x+(r_button_w/3), r_button_y+((r_button_h*3)/4));
+/*
     fl_color(can_scroll_right()?labelcolor():fl_inactive(labelcolor()));
     fl_polygon(x()+w()-button_width_+arrow_offsets_x, y()+arrow_offsets_y, 
       x()+w()-arrow_offsets_x, y()+(tab_height_>>1),
-      x()+w()-button_width_+arrow_offsets_x, y()+tab_height_-arrow_offsets_y);
+      x()+w()-button_width_+arrow_offsets_x, y()+tab_height_-arrow_offsets_y);*/
   }
 
   {
@@ -162,31 +191,55 @@ void Fl_Scroll_Tabs::draw() {
         
     // Draw children.
     for (int i = 0; i<children(); i++) {
-      const int that_x = x()+(i*LABEL_WIDTH)-offset+button_width_+2;
+      // The x of the current tab we want to draw.
+      const int that_x = X+(i*LABEL_WIDTH)-offset+button_width_;
             
-      if (fl_not_clipped(that_x, y(), LABEL_WIDTH, tab_height_)==0)
+      if (fl_not_clipped(that_x, Y, LABEL_WIDTH, tab_height_)==0)
         continue;
+
       // Draw the frame for the tab panel
       if (child(i)==value_)
-        fl_draw_box(FL_DOWN_BOX, that_x-2, y(), LABEL_WIDTH, tab_height_+4, selection_color());
+        fl_draw_box(FL_DOWN_BOX, that_x-2, Y, LABEL_WIDTH, tab_height_+2+TAB_SELECTION_BORDER, selection_color());
       else
-        fl_draw_box(FL_UP_BOX, that_x, y()+2, LABEL_WIDTH-4, tab_height_+2, color());
+        fl_draw_box(FL_UP_BOX, that_x, Y+2, LABEL_WIDTH-4, tab_height_+2, color());
                         
       // Draw the tab title
-      fl_push_clip(that_x, y(), LABEL_WIDTH-tab_height_, tab_height_);
+      fl_push_clip(that_x, Y, LABEL_WIDTH-tab_height_, tab_height_);
       fl_color(labelcolor());
-      fl_draw(child(i)->label(), that_x, y()+font_offset);
+      fl_draw(child(i)->label(), that_x, Y+font_offset);
       fl_pop_clip();
 
       if (closebutton_) {
         // Draw the close button
         if(child(i)==value_)
-          fl_draw_box(FL_THIN_DOWN_FRAME, that_x+LABEL_WIDTH-button_width_-1, y()+3, button_width_-4, tab_height_-4, color());
+          fl_draw_box(FL_THIN_DOWN_FRAME, that_x+LABEL_WIDTH-button_width_-1, Y+3, button_width_-4, tab_height_-4, color());
         else
-          fl_draw_box(FL_THIN_DOWN_FRAME, that_x+LABEL_WIDTH-button_width_-3, y()+4, button_width_-4, tab_height_-4, color());
-        // Not really sure how we should do the little 'x', so just write an 'x' string for now.
+          fl_draw_box(FL_THIN_DOWN_FRAME, that_x+LABEL_WIDTH-button_width_-3, Y+4, button_width_-4, tab_height_-4, color());
         fl_color(labelcolor());
-        fl_draw("x", 1, that_x+LABEL_WIDTH-button_width_+2, y()+font_offset);
+        // Draw a closed loop as so:
+        /*
+                2
+              /  \
+            1     \
+             .     \
+              .     \
+               .     3
+                .   /
+                  4
+        */
+        
+        int x1 = that_x+LABEL_WIDTH-button_width_+(Fl::box_dx(FL_THIN_DOWN_FRAME)<<1),
+          x2 = that_x+LABEL_WIDTH-Fl::box_dh(FL_THIN_DOWN_FRAME),
+          y1 = Y+Fl::box_dy(FL_THIN_DOWN_FRAME)+1,
+          y2 = Y+tab_height_-4-Fl::box_dh(FL_THIN_DOWN_FRAME);
+          
+          
+        if (child(i)==value_) {
+          y1+=2;
+          y2+=2;
+        }
+        
+        //fl_polygon();
       }
     }
 
