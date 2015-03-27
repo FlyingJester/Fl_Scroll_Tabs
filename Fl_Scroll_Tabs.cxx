@@ -94,30 +94,26 @@ int Fl_Scroll_Tabs::handle(int e) {
 
         pressed_ = -1;
 
-        if(!(inside_left_button || inside_right_button)) { // Mouse is inside the tab bar itself
-          const int effective_x = Fl::event_x()+offset-button_width_,
-            x_inside_tab = effective_x%LABEL_WIDTH,
-            selected_tab = effective_x/LABEL_WIDTH;
-                        
-          if (children()<=selected_tab)
+        if (!(inside_left_button || inside_right_button)) { // Mouse is inside the tab bar itself
+          Fl_Widget *const kid = which(Fl::event_x(), Fl::event_y());
+
+          if (!kid)
             return 1;
-          if (selected_tab<0)
-            return 1;
-          else if (closebutton_ && (LABEL_WIDTH-x_inside_tab<16)) {
+          else if (closebutton_ && ((Fl::event_x()+offset-button_width_)%LABEL_WIDTH > LABEL_WIDTH-button_width_)) {
             if (close_callback_)
-              close_callback_(child(selected_tab), close_callback_arg_);
-            remove(child(selected_tab));
+              close_callback_(kid, close_callback_arg_);
+            remove(kid);
             ensure_value();
             redraw();
           }
           else
-            push(selected_tab);
+            push(kid);
                       
           return 1;
         }
       }
     } // Is withing tab bar
-    else if((e==FL_PUSH) || (e==FL_RELEASE)){
+    else if ((e==FL_PUSH) || (e==FL_RELEASE)) {
       if(pressed_)
         redraw();
       pressed_=-1;
