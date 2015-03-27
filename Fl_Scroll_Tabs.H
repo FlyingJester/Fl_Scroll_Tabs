@@ -42,7 +42,7 @@ class FL_EXPORT Fl_Scroll_Tabs : public Fl_Tabs {
   Fl_Callback_p close_callback_;
   void *close_callback_arg_;
   
-  unsigned tab_height_, button_width_,;
+  unsigned tab_height_, button_width_;
   int minimum_tab_width_, maximum_tab_width_;
 
   int pressed_; // 0 for tab bar, 1 for left button, 2 for right button
@@ -54,7 +54,7 @@ class FL_EXPORT Fl_Scroll_Tabs : public Fl_Tabs {
   const char **tab_labels; // array of byte-counts to print per tab to fit in the tab widths, negative indicates truncation
   int tab_count;  // size for tab_pos and tab_width
 
-  unsigned ellipse_size;
+  unsigned ellipse_size_;
   
   void ellipse_size();
 

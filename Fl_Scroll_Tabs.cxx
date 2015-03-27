@@ -23,10 +23,9 @@ Fl_Scroll_Tabs::Fl_Scroll_Tabs(int ax, int ay, int aw, int ah, const char *l)
   , pressed_(-1) 
   , tab_pos(NULL)
   , tab_width(NULL)
-  , tab_str_len(NULL)
-  , tab_capacity(0)
+  , tab_labels(NULL)
   , tab_count(0) 
-  , ellipse_size(0) {
+  , ellipse_size_(0) {
   box(FL_FLAT_BOX);
   ellipse_size();
 }
@@ -42,16 +41,16 @@ void Fl_Scroll_Tabs::ellipse_size() {
   int s_w = 0, s_h;
   fl_font(labelfont(), labelsize());
   fl_measure("...", s_w, s_h, 0);
-  ellipse_size = s_w;
+  ellipse_size_ = s_w;
 }
 
 int Fl_Scroll_Tabs::tab_positions() {
 
   if (tab_count!=children()) {
     tab_count = children();
-    tab_pos   = realloc(tab_pos, tab_count*sizeof(int));
-    tab_width = realloc(tab_width, tab_count*sizeof(int));
-    tab_str_len = realloc(tab_str_len, tab_count*sizeof(int));
+    tab_pos   = (int *)realloc(tab_pos, tab_count*sizeof(int));
+    tab_width = (int *)realloc(tab_width, tab_count*sizeof(int));
+    tab_labels = (const char**)realloc(tab_labels, tab_count*sizeof(const char *));
   }
   
   for (int i = 0; i<tab_count; i++) {
@@ -66,11 +65,12 @@ int Fl_Scroll_Tabs::tab_label_length(int i){
 
   const char *label_a = child(i)->label();
   int label_len = strlen(label_a);
-  char *label_ = malloc(label_len);
+  char *label_ = (char *)malloc(label_len);
   memcpy(label_, label_a, label_len+1);
 
+  int s_w = 0, s_h;
   while (label_len) {
-    int s_w = 0, s_h;
+
     fl_measure(label_, s_w, s_h);
     
     if (s_w<maximum_tab_width_) break;
@@ -81,8 +81,9 @@ int Fl_Scroll_Tabs::tab_label_length(int i){
   
   if (s_w<minimum_tab_width_) s_w = minimum_tab_width_;
   
-  tab_str_len[i] = label_len;
+  tab_labels[i] = label_;
     
+  return 1;
 }
 
 void Fl_Scroll_Tabs::clear_tab_positions(){
