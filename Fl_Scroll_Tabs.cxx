@@ -164,21 +164,11 @@ void Fl_Scroll_Tabs::draw() {
     fl_polygon(l_button_x+((l_button_w<<1)/3), l_button_y+(r_button_h/4),
       l_button_x+(l_button_w/3), l_button_y+(l_button_h>>1),
       l_button_x+((l_button_w<<1)/3), l_button_y+((l_button_h*3)/4));
-/*    
-    fl_polygon(x()+button_width_-arrow_offsets_x, y()+arrow_offsets_y, 
-      x()+arrow_offsets_x, y()+(tab_height_>>1),
-      x()+button_width_-arrow_offsets_x, y()+tab_height_-arrow_offsets_y);
-*/
-    
+   
     fl_color(can_scroll_right()?labelcolor():fl_inactive(labelcolor()));
     fl_polygon(r_button_x+(r_button_w/3), r_button_y+(r_button_h/4),
       r_button_x+((r_button_w<<1)/3), r_button_y+(r_button_h>>1),
       r_button_x+(r_button_w/3), r_button_y+((r_button_h*3)/4));
-/*
-    fl_color(can_scroll_right()?labelcolor():fl_inactive(labelcolor()));
-    fl_polygon(x()+w()-button_width_+arrow_offsets_x, y()+arrow_offsets_y, 
-      x()+w()-arrow_offsets_x, y()+(tab_height_>>1),
-      x()+w()-button_width_+arrow_offsets_x, y()+tab_height_-arrow_offsets_y);*/
   }
 
   {
@@ -211,33 +201,50 @@ void Fl_Scroll_Tabs::draw() {
 
       if (closebutton_) {
         // Draw the close button
-        if(child(i)==value_)
-          fl_draw_box(FL_THIN_DOWN_FRAME, that_x+LABEL_WIDTH-button_width_-1, Y+3, button_width_-4, tab_height_-4, color());
-        else
-          fl_draw_box(FL_THIN_DOWN_FRAME, that_x+LABEL_WIDTH-button_width_-3, Y+4, button_width_-4, tab_height_-4, color());
+        fl_draw_box(FL_THIN_DOWN_FRAME, that_x+LABEL_WIDTH-button_width_-1, Y+3, button_width_-4, tab_height_-4, color());
         fl_color(labelcolor());
         // Draw a closed loop as so:
-        /*
+        /*   v-v <= cross_edge_diff
+                  <
+                  | <= cross_insets
+                  <
                 2
-              /  \
-            1     \
-             .     \
-              .     \
-               .     3
+               / \
+              1   \
+               .   \
+                .   \
+                 .   3
+                  . /
+                   4
+                   
+                   1
+                  . \
+                 .   2
                 .   /
-                  4
+               .   /
+              4   /
+               \ /
+                3  
         */
         
-        int x1 = that_x+LABEL_WIDTH-button_width_+(Fl::box_dx(FL_THIN_DOWN_FRAME)<<1),
-          x2 = that_x+LABEL_WIDTH-Fl::box_dh(FL_THIN_DOWN_FRAME),
-          y1 = Y+Fl::box_dy(FL_THIN_DOWN_FRAME)+1,
-          y2 = Y+tab_height_-4-Fl::box_dh(FL_THIN_DOWN_FRAME);
-          
-          
-        if (child(i)==value_) {
-          y1+=2;
-          y2+=2;
-        }
+        const int box_bound_x = that_x+LABEL_WIDTH-button_width_-2+Fl::box_dx(FL_THIN_DOWN_FRAME),
+          box_bound_y = Y+4,
+          box_bound_w = button_width_-4-Fl::box_dw(FL_THIN_DOWN_FRAME),
+          box_bound_h = tab_height_-4-Fl::box_dh(FL_THIN_DOWN_FRAME),
+          cross_insets = 2, cross_edge_diff = 1;
+
+        // Top left to bottom right
+        fl_polygon(box_bound_x+cross_insets, box_bound_y+cross_insets+cross_edge_diff,
+          box_bound_x+cross_insets+cross_edge_diff, box_bound_y+cross_insets,
+          box_bound_x+box_bound_w-cross_insets, box_bound_y+box_bound_h-cross_insets-cross_edge_diff,
+          box_bound_x+box_bound_w-cross_insets-cross_edge_diff, box_bound_y+box_bound_h-cross_insets);
+        
+        // Top right to bottom left
+        fl_polygon(box_bound_x+box_bound_w-cross_insets-cross_edge_diff, box_bound_y+cross_insets,
+          box_bound_x+box_bound_w-cross_insets, box_bound_y+cross_insets+cross_edge_diff,
+          box_bound_x+cross_insets+cross_edge_diff, box_bound_y+box_bound_h-cross_insets,
+          box_bound_x+cross_insets, box_bound_y+box_bound_h-cross_insets-cross_edge_diff);
+        
         
         //fl_polygon();
       }
