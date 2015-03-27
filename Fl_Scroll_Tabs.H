@@ -26,6 +26,14 @@
 
 #include <FL/Fl_Tabs.H>
 
+/**
+  The Fl_Scroll_Tabs class implements a scrolling, dynamic tabs widget for FLTK.
+
+  This widget is intended to hold dynamic content, and allows the user to close
+  tabs using a close button beside tab's label.
+  If too many tabs exist to all have their labels displayed at once, the labels
+  can be scrolled through using a pair of buttons.
+*/
 class FL_EXPORT Fl_Scroll_Tabs : public Fl_Tabs {
 
   unsigned long offset;   
@@ -64,6 +72,7 @@ public:
   Fl_Widget *push() const;
   int push(Fl_Widget *);
   int push(int i) {return push(child(i));}
+  
   /**
     Returns the currently selected tab group, or NULL if no tabs exist.
     \see value(Fl_Widget*).
@@ -77,14 +86,48 @@ public:
   */
   int value(Fl_Widget *w){int f = find(w); if (f!=children()) value_ = w; return f;}
   
+  /**
+    Returns the tab group that would be selected by clicking at \p event_x, \p event_y.
+    Returns NULL if the location would not select a tab group.
+  */
   Fl_Widget *which(int event_x, int event_y);
   
+  /**
+    Returns non-zero if the close button is displayed on tabs, zero otherwise.
+    \see set_closebutton()
+    \see clear_closebutton()
+    \see closebutton(int)
+  */
   int closebutton() const {return closebutton_!=0;}
+  
+  /**
+    Sets whether or not to display the close button on tab labels
+    \see set_closebutton()
+    \see clear_closebutton()
+    \see closebutton()
+  */
   void closebutton(int i) {closebutton_=(i!=0);}
-    
-  void set_closebutton() {closebutton(1);}
+  
+  /**
+    Sets the close button to be displayed on tabs  
+    \see clear_closebutton()
+    \see closebutton(int)
+    \see closebutton()
+  */
+  void set_closebutton() {closebutton(1);} 
+  /**
+    Sets the close button not to be displayed on tabs  
+    \see set_closebutton()
+    \see closebutton(int)
+    \see closebutton()
+  */
   void clear_closebutton() {closebutton(0);}
-   
+  
+  /**
+    Sets a callback to for when a tab group is closed using a close button next to its label. 
+    This callback will be called after removing the widget from the tabs, so it is alright to delete the widget in the callback.
+    \see closebutton()
+  */
   void close_callback(Fl_Callback_p cb_, void *arg_) {close_callback_ = cb_; close_callback_arg_ = arg_;}
 
 };

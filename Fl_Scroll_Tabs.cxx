@@ -103,9 +103,9 @@ int Fl_Scroll_Tabs::handle(int e) {
           if (!kid)
             return 1;
           else if (closebutton_ && ((Fl::event_x()+offset-button_width_)%LABEL_WIDTH > LABEL_WIDTH-button_width_)) {
+            remove(kid);
             if (close_callback_)
               close_callback_(kid, close_callback_arg_);
-            remove(kid);
             ensure_value();
             redraw();
           }
@@ -216,7 +216,7 @@ void Fl_Scroll_Tabs::draw() {
                  .   3
                   . /
                    4
-                   
+      ...
                    1
                   . \
                  .   2
