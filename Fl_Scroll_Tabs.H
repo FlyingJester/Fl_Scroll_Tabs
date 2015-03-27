@@ -42,7 +42,7 @@ class FL_EXPORT Fl_Scroll_Tabs : public Fl_Tabs {
   Fl_Callback_p close_callback_;
   void *close_callback_arg_;
   
-  unsigned tab_height_, button_width_;
+  int tab_height_, button_width_;
   int minimum_tab_width_, maximum_tab_width_;
 
   int pressed_; // 0 for tab bar, 1 for left button, 2 for right button
@@ -124,14 +124,14 @@ public:
     \see closebutton(int)
     \see closebutton()
   */
-  void set_closebutton() {closebutton(1);tab_positions();} 
+  void set_closebutton() {closebutton(1);} 
   /**
     Sets the close button not to be displayed on tabs  
     \see set_closebutton()
     \see closebutton(int)
     \see closebutton()
   */
-  void clear_closebutton() {closebutton(0);tab_positions();}
+  void clear_closebutton() {closebutton(0);}
   
   /**
     Sets a callback to for when a tab group is closed using a close button next to its label. 

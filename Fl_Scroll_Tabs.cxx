@@ -60,7 +60,7 @@ int Fl_Scroll_Tabs::tab_positions() {
     }
   }
   
-  const int tab_label_padding = Fl::box_dw(FL_DOWN_BOX)+(TAB_SELECTION_BORDER<<1);
+  const int tab_label_padding = Fl::box_dw(FL_DOWN_BOX)+(TAB_SELECTION_BORDER<<1)+(closebutton_?button_width_:0);
   
   tab_width[0] = tab_label_length(0)+tab_label_padding;
   tab_pos[0] = 0;
@@ -90,10 +90,8 @@ int Fl_Scroll_Tabs::tab_label_length(int i) {
   
   if (maximum_tab_width_!=-1) {
     char *end = label_+label_len;
-    while ((end!=label_) && (s_w>=maximum_tab_width_)) {
-      
-      
-      printf("Replaced %s at %c with ellipse. Width is %i\n", label_, *end, s_w);
+    const int effective_max = maximum_tab_width_-((closebutton_)?button_width_:0);
+    while ((end!=label_) && (s_w>=effective_max)) {
       
       strcpy(end, "...");
       
@@ -105,11 +103,11 @@ int Fl_Scroll_Tabs::tab_label_length(int i) {
     }
   }
   
-  if (closebutton_) {
-    if (s_w+button_width_<minimum_tab_width_) s_w = minimum_tab_width_-button_width_;
+  if (closebutton_ && (s_w<minimum_tab_width_-button_width_)) {
+    s_w = minimum_tab_width_-button_width_;
   }
-  else {
-    if (s_w<minimum_tab_width_) s_w = minimum_tab_width_;
+  else if (s_w<minimum_tab_width_) {
+     s_w = minimum_tab_width_;
   } 
 
   tab_labels[i] = label_;
