@@ -211,6 +211,8 @@ int Fl_Scroll_Tabs::handle(int e) {
               ensure_value();
               redraw();
             }
+            else
+              push(kid);
           }
           else
             push(kid);
