@@ -19,9 +19,9 @@ Fl_Scroll_Tabs::Fl_Scroll_Tabs(int ax, int ay, int aw, int ah, const char *l)
   , closebutton_(0)
   , close_callback_(NULL)
   , tab_height_(MINIMUM_TAB_HEIGHT)
-  , button_width_(MINIMUM_TAB_HEIGHT)
-  , minimum_tab_width_(128) 
-  , maximum_tab_width_(-1)
+  , button_width_(MAXIMUM_BUTTON_WIDTH)
+  , minimum_tab_width_(8) 
+  , maximum_tab_width_(64)
   , pressed_(-1) 
   , tab_pos(NULL)
   , tab_width(NULL)
@@ -114,7 +114,7 @@ int Fl_Scroll_Tabs::tab_label_length(int i) {
     if (s_w+button_width_<minimum_tab_width_) s_w = minimum_tab_width_-button_width_;
   }
   else {
-    if (s_w<button_width_) s_w = button_width_;
+    if (s_w<minimum_tab_width_) s_w = minimum_tab_width_;
   } 
 
   tab_labels[i] = label_;
@@ -406,6 +406,7 @@ int Fl_Scroll_Tabs::calculate_tab_sizes() {
   tab_positions();
 
   tab_height_ = lowest_top;
+  if(tab_height_<MINIMUM_TAB_HEIGHT) tab_height_ = MINIMUM_TAB_HEIGHT;
   button_width_ = tab_height_;
   if(button_width_ > MAXIMUM_BUTTON_WIDTH) button_width_ = MAXIMUM_BUTTON_WIDTH;
 
