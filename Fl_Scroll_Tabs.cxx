@@ -2,9 +2,9 @@
 #include <FL/fl_draw.H>
 #include <FL/Fl.H>
 
-#define LABEL_WIDTH 128
 #define TAB_SCROLL 8
 #define MINIMUM_TAB_HEIGHT 16
+#define MAXIMUM_BUTTON_WIDTH 16
 
 // The amount to pad tabs that are not selected
 #define TAB_SELECTION_BORDER 2
@@ -20,6 +20,8 @@ Fl_Scroll_Tabs::Fl_Scroll_Tabs(int ax, int ay, int aw, int ah, const char *l)
   , close_callback_(NULL)
   , tab_height_(MINIMUM_TAB_HEIGHT)
   , button_width_(MINIMUM_TAB_HEIGHT)
+  , minimum_tab_width_(128) 
+  , maximum_tab_width_(-1)
   , pressed_(-1) 
   , tab_pos(NULL)
   , tab_width(NULL)
@@ -46,16 +48,35 @@ void Fl_Scroll_Tabs::ellipse_size() {
 
 int Fl_Scroll_Tabs::tab_positions() {
 
+  if(!children())
+    return 0;
+
   if (tab_count!=children()) {
-    tab_count = children();
-    tab_pos   = (int *)realloc(tab_pos, tab_count*sizeof(int));
-    tab_width = (int *)realloc(tab_width, tab_count*sizeof(int));
-    tab_labels = (const char**)realloc(tab_labels, tab_count*sizeof(const char *));
+    
+    while(tab_count>children()){
+      tab_count--;
+      free(tab_labels[tab_count]);
+    }
+  
+    tab_pos   = (int *)realloc(tab_pos, children()*sizeof(int));
+    tab_width = (int *)realloc(tab_width, children()*sizeof(int));
+    tab_labels = (char**)realloc(tab_labels, children()*sizeof(const char *));
+    
+    // Clear all added tab_labels elements so that they can be realloc'ed
+    while(tab_count<children()){
+      tab_labels[tab_count] = NULL;
+      tab_count++;
+    }
   }
   
-  for (int i = 0; i<tab_count; i++) {
-    tab_width[i] = tab_label_length(i);
-    tab_pos[i] = tab_width[i] + (i?tab_pos[i-1]:0);
+  const int tab_label_padding = Fl::box_dw(FL_DOWN_BOX)+(TAB_SELECTION_BORDER<<1);
+  
+  tab_width[0] = tab_label_length(0)+tab_label_padding;
+  tab_pos[0] = 0;
+  
+  for (int i = 1; i<tab_count; i++) {
+    tab_width[i] = tab_label_length(i)+tab_label_padding;
+    tab_pos[i] = tab_width[i-1] + tab_pos[i-1];
   }
   
   return 0;
@@ -63,27 +84,42 @@ int Fl_Scroll_Tabs::tab_positions() {
 
 int Fl_Scroll_Tabs::tab_label_length(int i){
 
-  const char *label_a = child(i)->label();
+  const char * const label_a = child(i)->label();
   int label_len = strlen(label_a);
-  char *label_ = (char *)malloc(label_len);
+  const int initial_len = label_len;
+  // Three extra to hold an ellipse if necessary. 
+  // Not 4 for a null+ellipse, since ellipse is only appended if the string is truncated.
+  char *label_ = (char *)realloc(tab_labels[i], label_len+3);
   memcpy(label_, label_a, label_len+1);
 
   int s_w = 0, s_h;
-  while (label_len) {
-
-    fl_measure(label_, s_w, s_h);
-    
-    if (s_w<maximum_tab_width_) break;
-    
-    // Truncate one more letter off.
-    label_[--label_len] = 0;
+  
+  fl_measure(label_, s_w, s_h);
+  
+  if(maximum_tab_width_!=-1){
+    do {
+      
+      if (s_w<maximum_tab_width_-(closebutton_?button_width_:0)) break;
+      
+      // Truncate one more letter off.
+      label_[--label_len] = 0;
+      strcat(label_, "...");
+      
+      fl_measure(label_, s_w, s_h);
+      
+    } while (label_len);
   }
   
-  if (s_w<minimum_tab_width_) s_w = minimum_tab_width_;
-  
+  if(closebutton_){
+    if(s_w+button_width_<minimum_tab_width_) s_w = minimum_tab_width_-button_width_;
+  }
+  else{
+    if(s_w<button_width_) s_w = button_width_;
+  } 
+
   tab_labels[i] = label_;
-    
-  return 1;
+  
+  return s_w;
 }
 
 void Fl_Scroll_Tabs::clear_tab_positions(){
@@ -165,15 +201,19 @@ int Fl_Scroll_Tabs::handle(int e) {
 
         if (!(inside_left_button || inside_right_button)) { // Mouse is inside the tab bar itself
           Fl_Widget *const kid = which(Fl::event_x(), Fl::event_y());
-
+          
           if (!kid)
             return 1;
-          else if (closebutton_ && ((Fl::event_x()+offset-button_width_)%LABEL_WIDTH > LABEL_WIDTH-button_width_)) {
-            remove(kid);
-            if (close_callback_)
-              close_callback_(kid, close_callback_arg_);
-            ensure_value();
-            redraw();
+          if (closebutton_){
+            const int n_kid = find(kid),
+              hotspot_x = tab_pos[n_kid]+tab_width[n_kid];
+            if((Fl::event_x()+offset-button_width_ >= hotspot_x-button_width_) && (Fl::event_x()+offset-button_width_ <= hotspot_x)) {
+              remove(kid);
+              if (close_callback_)
+                close_callback_(kid, close_callback_arg_);
+              ensure_value();
+              redraw();
+            }
           }
           else
             push(kid);
@@ -206,7 +246,7 @@ void Fl_Scroll_Tabs::draw() {
     H = h()-Fl::box_dh(box());
 
   calculate_tab_sizes();
-  
+
   Fl_Boxtype l_button_box = (pressed_==1)?FL_DOWN_FRAME:FL_UP_FRAME;
   Fl_Boxtype r_button_box = (pressed_==2)?FL_DOWN_FRAME:FL_UP_FRAME;
   
@@ -244,30 +284,32 @@ void Fl_Scroll_Tabs::draw() {
     fl_push_clip(x()+button_width_, y(), w()-(button_width_<<1), tab_height_);
         
     const int font_offset = (tab_height_+fl_height())>>1;
-        
+    
+    tab_positions();
+    
     // Draw children.
     for (int i = 0; i<children(); i++) {
       // The x of the current tab we want to draw.
-      const int that_x = X+(i*LABEL_WIDTH)-offset+button_width_;
+      const int that_x = X+tab_pos[i]-offset+button_width_;
             
-      if (fl_not_clipped(that_x, Y, LABEL_WIDTH, tab_height_)==0)
+      if (fl_not_clipped(that_x, Y, tab_width[i], tab_height_)==0)
         continue;
 
       // Draw the frame for the tab panel
       if (child(i)==value_)
-        fl_draw_box(FL_DOWN_BOX, that_x-2, Y, LABEL_WIDTH, tab_height_+2+TAB_SELECTION_BORDER, selection_color());
+        fl_draw_box(FL_DOWN_BOX, that_x-2, Y, tab_width[i], tab_height_+2+TAB_SELECTION_BORDER, selection_color());
       else
-        fl_draw_box(FL_UP_BOX, that_x, Y+2, LABEL_WIDTH-4, tab_height_+2, color());
+        fl_draw_box(FL_UP_BOX, that_x, Y+2, tab_width[i]-(TAB_SELECTION_BORDER<<1), tab_height_+2, color());
                         
       // Draw the tab title
-      fl_push_clip(that_x, Y, LABEL_WIDTH-tab_height_, tab_height_);
+      fl_push_clip(that_x, Y, tab_width[i]-(closebutton_?button_width_:0), tab_height_);
       fl_color(labelcolor());
-      fl_draw(child(i)->label(), that_x, Y+font_offset);
+      fl_draw(tab_labels[i], that_x, Y+font_offset);
       fl_pop_clip();
 
       if (closebutton_) {
         // Draw the close button
-        fl_draw_box(FL_THIN_DOWN_FRAME, that_x+LABEL_WIDTH-button_width_-1, Y+3, button_width_-4, tab_height_-4, color());
+        fl_draw_box(FL_THIN_DOWN_FRAME, that_x+tab_width[i]-button_width_-1, Y+3, button_width_-4, tab_height_-4, color());
         fl_color(labelcolor());
         // Draw a closed loop as so:
         /*   v-v <= cross_edge_diff
@@ -293,7 +335,7 @@ void Fl_Scroll_Tabs::draw() {
                 3  
         */
         
-        const int box_bound_x = that_x+LABEL_WIDTH-button_width_-2+Fl::box_dx(FL_THIN_DOWN_FRAME),
+        const int box_bound_x = that_x+tab_width[i]-button_width_-2+Fl::box_dx(FL_THIN_DOWN_FRAME),
           box_bound_y = Y+4,
           box_bound_w = button_width_-4-Fl::box_dw(FL_THIN_DOWN_FRAME),
           box_bound_h = tab_height_-4-Fl::box_dh(FL_THIN_DOWN_FRAME),
@@ -340,11 +382,16 @@ Fl_Widget *Fl_Scroll_Tabs::which(int event_x, int event_y) {
     (event_x<x()+button_width_) || (event_x>x()+w()-button_width_))
     return NULL;
   
-  const int selected_tab = (event_x+offset-button_width_)/LABEL_WIDTH;
+  tab_positions();
+  
+  const int effective_x = event_x+offset-button_width_;
+  
+  for (int i = 0; i<tab_count; i++){
+      if(effective_x>=tab_pos[i] && effective_x<=tab_pos[i]+tab_width[i])
+          return child(i);
+  }
+  return NULL;
 
-  if ((selected_tab>=children()) || (selected_tab<0)) return NULL;
-    
-  return child(selected_tab);
 }
 
 int Fl_Scroll_Tabs::calculate_tab_sizes() {
@@ -355,10 +402,13 @@ int Fl_Scroll_Tabs::calculate_tab_sizes() {
     const int top_diff = child(i)->y()-y();
     if(top_diff<lowest_top) lowest_top = top_diff;
   }
-    
+
+  tab_positions();
+
   tab_height_ = lowest_top;
   button_width_ = tab_height_;
-    
+  if(button_width_ > MAXIMUM_BUTTON_WIDTH) button_width_ = MAXIMUM_BUTTON_WIDTH;
+
   return 0;
 }
 
@@ -367,7 +417,12 @@ int Fl_Scroll_Tabs::can_scroll_left() const {
 }
 
 int Fl_Scroll_Tabs::can_scroll_right() const {
-  const long max_offset = (LABEL_WIDTH*children())-w()+(button_width_<<1);
+  const long final_position =  tab_pos[tab_count-1]+tab_width[tab_count-1];
+  
+  if(final_position<w())
+    return 0;
+  
+  const long max_offset = final_position-w()+(button_width_<<1);
   return (max_offset>0) && (offset<max_offset);
 }
 

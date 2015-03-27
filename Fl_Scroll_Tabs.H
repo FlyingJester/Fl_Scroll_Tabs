@@ -51,7 +51,7 @@ class FL_EXPORT Fl_Scroll_Tabs : public Fl_Tabs {
 
   int *tab_pos;  // array of x-offsets of tabs per child
   int *tab_width;  // array of widths of tabs per child
-  const char **tab_labels; // array of byte-counts to print per tab to fit in the tab widths, negative indicates truncation
+  char **tab_labels; 
   int tab_count;  // size for tab_pos and tab_width
 
   unsigned ellipse_size_;
@@ -120,7 +120,7 @@ public:
     \see clear_closebutton()
     \see closebutton()
   */
-  void closebutton(int i) {closebutton_=(i!=0);}
+  void closebutton(int i) {closebutton_=(i!=0);tab_positions();}
   
   /**
     Sets the close button to be displayed on tabs  
@@ -128,14 +128,14 @@ public:
     \see closebutton(int)
     \see closebutton()
   */
-  void set_closebutton() {closebutton(1);} 
+  void set_closebutton() {closebutton(1);tab_positions();} 
   /**
     Sets the close button not to be displayed on tabs  
     \see set_closebutton()
     \see closebutton(int)
     \see closebutton()
   */
-  void clear_closebutton() {closebutton(0);}
+  void clear_closebutton() {closebutton(0);tab_positions();}
   
   /**
     Sets a callback to for when a tab group is closed using a close button next to its label. 
