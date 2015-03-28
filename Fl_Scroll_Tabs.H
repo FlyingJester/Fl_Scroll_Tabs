@@ -42,7 +42,8 @@ class FL_EXPORT Fl_Scroll_Tabs : public Fl_Tabs {
   Fl_Callback_p close_callback_;
   void *close_callback_arg_;
   
-  int tab_height_, button_width_;
+  
+  int tab_height_, tabs_on_bottom_, button_width_;
   int minimum_tab_width_, maximum_tab_width_;
 
   int pressed_; // 0 for tab bar, 1 for left button, 2 for right button
@@ -57,6 +58,8 @@ class FL_EXPORT Fl_Scroll_Tabs : public Fl_Tabs {
   int tab_positions();  // allocate and calculate tab positions
   int tab_label_length(int);  // calculate the label to print for the tab `i'. Returns the width of the new label (total) in pixels.
   void clear_tab_positions();
+
+  int tab_height();
 
 protected:
     
