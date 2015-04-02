@@ -190,8 +190,27 @@ int Fl_Scroll_Tabs::handle(int e) {
         if (pressed_!=-1)
           redraw();
 
-        if(pressed_>0)
-          Fl::remove_timeout(timeout_cb, this);
+        if(pressed_>0){
+            Fl::remove_timeout(timeout_cb, this);
+            tab_positions();
+            if(pressed_==1){
+                for(int i = 0; i<tab_count; i++){
+                    if((offset>=tab_pos[i]) && (offset<=tab_width[i]+tab_pos[i])){
+                        make_tab_visible(i);
+                        break;
+                    }
+                }
+            }
+            else if(pressed_==2){
+                const int far_edge = offset+w()-(button_width_<<1);
+                for(int i = 0; i<tab_count; i++){
+                    if((far_edge>=tab_pos[i]) && (far_edge<=tab_width[i]+tab_pos[i])){
+                        make_tab_visible(i);
+                        break;
+                    }
+                }
+            }
+        }
 
         pressed_ = -1;
 
