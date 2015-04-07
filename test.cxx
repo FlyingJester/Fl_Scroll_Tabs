@@ -38,7 +38,7 @@ int main(int arc, char *argv[]){
     TABS *scroll_tabs = new TABS(0, 0, 400, 200);
 
     initial_selection_color = scroll_tabs->selection_color();
-   // scroll_tabs->set_closebutton();
+    scroll_tabs->set_closebutton();
     
     Fl_Group *group1 = new Fl_Group(0, GPOS, 400, 200-24, "Test Tab 1");
     group1->color(FL_BLUE);

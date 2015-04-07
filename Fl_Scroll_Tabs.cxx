@@ -75,9 +75,11 @@ int Fl_Scroll_Tabs::tab_positions() {
 
 int Fl_Scroll_Tabs::tab_label_length(int i) {
 
-  fl_font(labelfont(), labelsize());
+  Fl_Widget *kid = child(i);
 
-  const char * const label_a = child(i)->label();
+  fl_font(kid->labelfont(), kid->labelsize());
+
+  const char * const label_a = kid->label();
   int label_len = strlen(label_a);
   // Three extra to hold an ellipse if necessary. 
   // Not 4 for a null+ellipse, since ellipse is only appended if the string is truncated.
@@ -326,8 +328,13 @@ void Fl_Scroll_Tabs::draw() {
       fl_pop_clip();
 
       if (closebutton_) {
+      
+        int box_offset = (tab_height_-button_width_);
+        box_offset+=(button_width_>>1);
+        box_offset>>=1;
+        
         // Draw the close button
-        fl_draw_box(FL_THIN_DOWN_FRAME, that_x+tab_width[i]-button_width_-1, tab_draw_y+(tabs_on_bottom_?-3:3), button_width_-4, tab_height_-4, color());
+        fl_draw_box(FL_THIN_DOWN_FRAME, that_x+tab_width[i]-button_width_-1, tab_draw_y+box_offset+(tabs_on_bottom_?-3:3), button_width_-4, button_width_-4, color());
         fl_color(labelcolor());
         // Draw a closed loop as so:
         /*   v-v <= cross_edge_diff
@@ -354,9 +361,9 @@ void Fl_Scroll_Tabs::draw() {
         */
         
         const int box_bound_x = that_x+tab_width[i]-button_width_-2+Fl::box_dx(FL_THIN_DOWN_FRAME),
-          box_bound_y = tab_draw_y+(tabs_on_bottom_?-4:4),
+          box_bound_y = tab_draw_y+box_offset+(tabs_on_bottom_?-4:4),
           box_bound_w = button_width_-4-Fl::box_dw(FL_THIN_DOWN_FRAME),
-          box_bound_h = tab_height_-4-Fl::box_dh(FL_THIN_DOWN_FRAME),
+          box_bound_h = button_width_-4-Fl::box_dh(FL_THIN_DOWN_FRAME),
           cross_insets = 2, cross_edge_diff = 1;
 
         // Top left to bottom right
