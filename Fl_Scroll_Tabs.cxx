@@ -303,7 +303,7 @@ void Fl_Scroll_Tabs::draw() {
     // Clip to the tab bar
     fl_push_clip(x()+button_width_, tab_draw_y, w()-(button_width_<<1), tab_height_);
         
-    const int font_offset = (tab_height_+fl_height())>>1;
+    const int font_offset = ((tab_height_+fl_height())>>1)+(tabs_on_bottom_?-4:0);
     
     tab_positions();
     
@@ -317,24 +317,22 @@ void Fl_Scroll_Tabs::draw() {
 
       // Draw the frame for the tab panel
       if (child(i)==value_)
-        fl_draw_box(FL_DOWN_BOX, that_x-2, tab_draw_y, tab_width[i], tab_height_+2+TAB_SELECTION_BORDER, selection_color());
+        fl_draw_box(FL_DOWN_BOX, that_x-2, tab_draw_y+(tabs_on_bottom_?-4:2), tab_width[i], tab_height_+2+TAB_SELECTION_BORDER, selection_color());
       else
-        fl_draw_box(FL_UP_BOX, that_x, tab_draw_y+(tabs_on_bottom_?-2:2), tab_width[i]-(TAB_SELECTION_BORDER<<1), tab_height_+2, color());
+        fl_draw_box(FL_UP_BOX, that_x, tab_draw_y+(tabs_on_bottom_?-4:2), tab_width[i]-(TAB_SELECTION_BORDER<<1), tab_height_+2, color());
                         
       // Draw the tab title
-      fl_push_clip(that_x, tab_draw_y, tab_width[i]-(closebutton_?button_width_:0), tab_height_);
+      fl_push_clip(that_x, tab_draw_y-TAB_SELECTION_BORDER, tab_width[i]-(closebutton_?button_width_:0), tab_height_);
       fl_color(labelcolor());
       fl_draw(tab_labels[i], that_x, tab_draw_y+font_offset);
       fl_pop_clip();
 
       if (closebutton_) {
       
-        int box_offset = (tab_height_-button_width_);
-        box_offset+=(button_width_>>1);
-        box_offset>>=1;
+        int box_offset = ((tab_height_-button_width_)+(button_width_>>1))>>1;
         
         // Draw the close button
-        fl_draw_box(FL_THIN_DOWN_FRAME, that_x+tab_width[i]-button_width_-1, tab_draw_y+box_offset+(tabs_on_bottom_?-3:3), button_width_-4, button_width_-4, color());
+        fl_draw_box(FL_THIN_DOWN_FRAME, that_x+tab_width[i]-button_width_-4, tab_draw_y+box_offset+(tabs_on_bottom_?-3:0), button_width_-4, button_width_-4, color());
         fl_color(labelcolor());
         // Draw a closed loop as so:
         /*   v-v <= cross_edge_diff
@@ -360,8 +358,8 @@ void Fl_Scroll_Tabs::draw() {
                 3  
         */
         
-        const int box_bound_x = that_x+tab_width[i]-button_width_-2+Fl::box_dx(FL_THIN_DOWN_FRAME),
-          box_bound_y = tab_draw_y+box_offset+(tabs_on_bottom_?-4:4),
+        const int box_bound_x = that_x+tab_width[i]-button_width_-5+Fl::box_dx(FL_THIN_DOWN_FRAME),
+          box_bound_y = tab_draw_y+box_offset+(tabs_on_bottom_?-3:1),
           box_bound_w = button_width_-4-Fl::box_dw(FL_THIN_DOWN_FRAME),
           box_bound_h = button_width_-4-Fl::box_dh(FL_THIN_DOWN_FRAME),
           cross_insets = 2, cross_edge_diff = 1;
