@@ -76,7 +76,12 @@ int Fl_Scroll_Tabs::tab_positions() {
 int Fl_Scroll_Tabs::tab_label_length(int i) {
 
   Fl_Widget *kid = child(i);
-
+  if(kid->label()==NULL){
+      tab_labels[i] = (char *)realloc(tab_labels[i], 1);
+      tab_labels[i][0] = '\0';
+      return 0;
+  }
+  
   fl_font(kid->labelfont(), kid->labelsize());
 
   const char * const label_a = kid->label();
