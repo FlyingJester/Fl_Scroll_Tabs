@@ -138,25 +138,21 @@ Fl_Widget *Fl_Scroll_Tabs::push() const {
 int Fl_Scroll_Tabs::push(Fl_Widget *w) {
   Fl_Widget *const old_value = value_;
   value_ = w;
-  const int c = ensure_value(); 
-    
+  const int c = ensure_value();
   if (value_ && (value_!=old_value)) {
     if (when()&FL_WHEN_CHANGED)
-      do_callback();
+      do_callback(); 
     redraw();
   }
-  else {
-    draw_child(*value_);
+  else { 
     value_->set_visible_focus();
   }
-  
   make_tab_visible(c);
-  
   return c;
 }
 
 int Fl_Scroll_Tabs::handle(int e) {
-
+  
   ensure_value();
 
   switch (e) {
@@ -188,15 +184,13 @@ int Fl_Scroll_Tabs::handle(int e) {
 
         if (inside_left_button || inside_right_button) {
           Fl::add_timeout(INITIALREPEAT, timeout_cb, this);
-            return 1;
+          return 1;
         }
       }
       if (e==FL_RELEASE) {
-        
         // We need to redraw the scroll button
         if (pressed_!=-1)
           redraw();
-
         if(pressed_>0){
             Fl::remove_timeout(timeout_cb, this);
             tab_positions();
@@ -218,12 +212,10 @@ int Fl_Scroll_Tabs::handle(int e) {
                 }
             }
         }
-
         pressed_ = -1;
 
         if (!(inside_left_button || inside_right_button)) { // Mouse is inside the tab bar itself
           Fl_Widget *const kid = which(Fl::event_x(), Fl::event_y());
-          
           if (!kid)
             return 1;
           if (closebutton_) {
@@ -241,7 +233,6 @@ int Fl_Scroll_Tabs::handle(int e) {
           }
           else
             push(kid);
-                      
           return 1;
         }
       }
@@ -253,11 +244,13 @@ int Fl_Scroll_Tabs::handle(int e) {
     }
   }
 
-  return Fl_Group::handle(e);
+  
+  int r_ =  Fl_Group::handle(e);
+
+  return r_;
 }
 
 void Fl_Scroll_Tabs::draw() {
-  
   // Draw our box
   fl_draw_box(box(), x(), y(), w(), h(), color());
 
